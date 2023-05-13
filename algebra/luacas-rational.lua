@@ -4,7 +4,7 @@
 --- @field denominator Ring
 --- @field ring RingIdentifier
 Rational = {}
-__Rational = {}
+local __Rational = {}
 
 
 --------------------------
@@ -54,9 +54,9 @@ end
 ----------------------------
 
 -- So we don't have to copy the field operations each time.
-local __o = Copy(__FieldOperations)
-__o.__index = Rational
-__o.__tostring = function(a)
+__RationalOperations = Copy(__FieldOperations)
+__RationalOperations.__index = Rational
+__RationalOperations.__tostring = function(a)
     if a.ring.symbol then
         return "(" .. tostring(a.numerator)..")/("..tostring(a.denominator) .. ")"
     end
@@ -70,7 +70,7 @@ end
 --- @param keep boolean
 function Rational:new(n, d, keep)
     local o = {}
-    o = setmetatable(o, __o)
+    o = setmetatable(o, __RationalOperations)
 
     if n:getring() == PolynomialRing.getring() then
         o.symbol = n.symbol
@@ -88,7 +88,15 @@ function Rational:new(n, d, keep)
     d = d or Integer.one()
     o.numerator = n
     o.denominator = d
-    o:reduce()
+    if not keep then
+        o:reduce()
+    end
+
+    if o.numerator:getring() == Integer.getring() then
+        o.ring = Integer.getring()
+    elseif o.numerator:getring() == PolynomialRing.getring() then
+        o.ring = Ring.resultantring(o.numerator:getring(), o.denominator:getring())
+    end
 
     if (not keep) and o.denominator == Integer.one() or (not keep) and o.numerator == Integer.zero() then
         return o.numerator
@@ -107,7 +115,6 @@ function Rational:reduce()
         local gcd = Integer.gcd(self.numerator, self.denominator)
         self.numerator = self.numerator//gcd
         self.denominator = self.denominator//gcd
-        self.ring = Integer.getring()
     elseif self.numerator:getring() == PolynomialRing.getring() then
         local lc = self.denominator:lc()
         self.denominator = self.denominator/lc
@@ -115,7 +122,6 @@ function Rational:reduce()
         local gcd = PolynomialRing.gcd(self.numerator, self.denominator)
         self.numerator = self.numerator//gcd
         self.denominator = self.denominator//gcd
-        self.ring = Ring.resultantring(self.numerator:getring(), self.denominator:getring())
     end
 end
 

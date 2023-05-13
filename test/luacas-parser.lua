@@ -1,8 +1,10 @@
 -- Rudimentary parser for making the CAS easier to use. Essentially just wraps SymbolExpression() around symbols and Integer() around integers.
 
 
-
-require("calculus.luacas-_init")
+local luacas = require("luacas_init")
+luacas:initglobalmodule("core")
+luacas:initglobalmodule("algebra")
+luacas:initglobalmodule("calculus")
 
 -- Splits a string on a seperator.
 function split(str, sep)
@@ -305,7 +307,7 @@ function CASparse(input)
     -- Replaces each instance of a decimal with .., so we can use integer metatables to convert it into a rational properly.
     str = string.gsub(str, "Integer%('[0-9]+'%)%.Integer%('[0-9]+'%)", function (s)
         local ints = split(s, "%.")
-        return ints[1] .. ".." .. ints[2]
+        return "("..ints[1] .. ".." .. ints[2] .. ")"
     end)
     str = string.gsub(str, ".?%.Integer%('[0-9]+'%)", function (s)
         if string.sub(s, 1, 2) == ".." then

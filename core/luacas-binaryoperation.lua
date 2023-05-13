@@ -5,7 +5,7 @@
 --- @field operation function
 --- @field expressions table<number, Expression>
 BinaryOperation = {}
-__BinaryOperation = {}
+local __BinaryOperation = {}
 
 ----------------------------
 -- Instance functionality --
@@ -621,6 +621,8 @@ function BinaryOperation:tolatex()
             for index, expression in ipairs(self.expressions) do
                 if index == 1 then
                     out = out .. expression:tolatex()
+                elseif expression:isconstant() and expression < Integer.zero() then 
+                    out = out .. "\\cdot (" .. expression:tolatex() .. ")" 
                 else
                     out = out .. "\\cdot " .. expression:tolatex()
                 end

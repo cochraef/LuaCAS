@@ -4,7 +4,7 @@
 --- @field symbol SymbolExpression
 --- @field ring RingIdentifier
 PolynomialRing = {}
-__PolynomialRing = {}
+local __PolynomialRing = {}
 
 -- Metatable for ring objects.
 local __obj = {__index = PolynomialRing, __eq = function(a, b)
@@ -214,9 +214,9 @@ end
 ----------------------------
 
 -- So we don't have to copy the Euclidean operations each time
-local __o = Copy(__EuclideanOperations)
-__o.__index = PolynomialRing
-__o.__tostring = function(a)
+__PolynomialOperations = Copy(__EuclideanOperations)
+__PolynomialOperations.__index = PolynomialRing
+__PolynomialOperations.__tostring = function(a)
     local out = ""
     local loc = a.degree:asnumber()
     while loc >= 0 do
@@ -229,7 +229,7 @@ __o.__tostring = function(a)
     end
     return string.sub(out, 1, string.len(out) - 1)
 end
-__o.__div = function(a, b)
+__PolynomialOperations.__div = function(a, b)
     if not b.getring then
         return BinaryOperation.DIVEXP({a, b})
     end
@@ -258,13 +258,20 @@ function PolynomialRing:tolatex()
     end
     if self.ring == Rational.getring() or self.ring == Integer.getring() or self.ring == IntegerModN.getring() then
         if self.coefficients[loc] ~= Integer.one() then
-            out = out .. self.coefficients[loc]:tolatex() .. self.symbol
+            if self.coefficients[loc] == Integer(-1) then
+                out = out .. "-" .. self.symbol
+            elseif self.coefficients[loc] == Integer.zero() then
+                goto lead
+            else
+                out = out .. self.coefficients[loc]:tolatex() .. self.symbol
+            end
         else
             out = out .. self.symbol
         end
         if loc ~=1 then
             out = out .. "^{" .. loc .. "}"
         end
+        ::lead::
         loc = loc -1
         while loc >=0 do
             local coeff = self.coefficients[loc]
@@ -330,7 +337,7 @@ end
 -- Creates a new polynomial ring given an array of coefficients and a symbol
 function PolynomialRing:new(coefficients, symbol, degree)
     local o = {}
-    o = setmetatable(o, __o)
+    o = setmetatable(o, __PolynomialOperations)
 
     if type(coefficients) ~= "table" then
         error("Sent parameter of wrong type: Coefficients must be in an array")
